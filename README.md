@@ -1,6 +1,6 @@
 Here's the updated README file for your Attendance Calculator, reflecting the changes to track the number of lectures attended and excluding singular holidays:
 
-```markdown
+
 # Attendance Calculator
 
 This web-based Attendance Calculator helps you track and calculate your attendance percentage for different subjects over a specified period.
