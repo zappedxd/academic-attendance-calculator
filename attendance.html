@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendance Calculator</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f4f8;
+            margin: 0;
+            padding: 0;
+            color: #333;
+        }
+        .container {
+            max-width: 700px;
+            margin: 40px auto;
+            padding: 20px;
+            background-color: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #4CAF50;
+        }
+        label {
+            font-weight: bold;
+            color: #333;
+        }
+        input[type="date"],
+        input[type="text"],
+        input[type="number"] {
+            width: calc(100% - 22px);
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            font-size: 1em;
+            background-color: #f9f9f9;
+        }
+        button {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 1.2em;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .footer {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            background-color: #282c34;
+            color: #f1f1f1;
+            text-align: center;
+            padding: 15px;
+            border-top: 2px solid #61dafb;
+            font-size: 14px;
+        }
+        .footer a {
+            color: #61dafb;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .footer a:hover {
+            text-decoration: underline;
+        }
+        #results {
+            margin-top: 20px;
+            padding: 20px;
+            background-color: #e8f5e9;
+            border-radius: 5px;
+            border: 1px solid #4CAF50;
+            color: #2e7d32;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Attendance Calculator</h1>
+
+    <label for="startDate">Start Date (yyyy-mm-dd):</label>
+    <input type="date" id="startDate" required>
+
+    <label for="endDate">End Date (yyyy-mm-dd):</label>
+    <input type="date" id="endDate" required>
+
+    <h3>Add Holidays</h3>
+    <label for="holidays">Holidays (comma-separated yyyy-mm-dd):</label>
+    <input type="text" id="holidays" placeholder="e.g. 2024-12-25,2024-12-26;2024-01-01">
+
+    <h3>Add Vacation Periods</h3>
+    <label for="vacations">Vacation Periods (start,end separated by semicolons):</label>
+    <input type="text" id="vacations" placeholder="e.g. 2024-07-01,2024-07-15;2024-08-10,2024-08-20">
+
+    <div id="attendanceInput"></div>
+
+    <button onclick="calculateAttendance()">Calculate Attendance</button>
+
+    <h2>Results</h2>
+    <div id="results"></div>
+</div>
+
+<script>
+// Timetable: Define lecture days for each subject
+const timetable = {
+    'SS': [0, 1, 2, 3], // Monday, Tuesday, Wednesday, Thursday
+    'MCA': [0, 1, 3, 4], // Monday, Tuesday, Thursday, Friday
+    'SSIC': [0, 1, 2, 4], // Monday, Tuesday, Wednesday, Friday
+    'TCS': [0, 1, 2, 4], // Monday, Tuesday, Wednesday, Friday
+    'OS': [1, 3, 4, 3] // Tuesday, Thursday (twice), Friday
+};
+
+// Subjects list
+const subjects = ['SS', 'MCA', 'SSIC', 'TCS', 'OS'];
+
+// Generate attendance input fields for each subject
+function generateAttendanceFields() {
+    let inputDiv = document.getElementById('attendanceInput');
+    inputDiv.innerHTML = '';
+    subjects.forEach(subject => {
+        inputDiv.innerHTML += `
+            <label for="present-${subject}">Days present for ${subject}:</label>
+            <input type="number" id="present-${subject}" required>
+        `;
+    });
+}
+
+// Call the function to generate the fields on load
+window.onload = generateAttendanceFields;
+
+// Function to parse date ranges from input
+function parseDateRanges(inputId) {
+    const input = document.getElementById(inputId).value;
+    if (!input) return [];
+    const dateRanges = input.split(';');
+    let dates = [];
+    dateRanges.forEach(range => {
+        const [start, end] = range.split(',').map(date => new Date(date));
+        while (start <= end) {
+            dates.push(start.toISOString().split('T')[0]);
+            start.setDate(start.getDate() + 1);
+        }
+    });
+    return dates;
+}
+
+// Function to calculate the number of lecture days (Mon-Fri) between two dates
+function calculateWeeks(start, end, holidays, vacations) {
+    let totalDays = (end - start) / (1000 * 60 * 60 * 24);  // Total days between start and end
+    let weeks = Math.floor(totalDays / 7) * 5;  // Full weeks (5 weekdays)
+    let remainingDays = totalDays % 7;  // Extra days after full weeks
+    let startWeekday = start.getDay();  // Start date weekday (0=Sunday, 6=Saturday)
+
+    for (let i = 0; i <= remainingDays; i++) {
+        if (startWeekday + i < 5 && startWeekday + i >= 0) {
+            let currentDate = new Date(start);
+            currentDate.setDate(currentDate.getDate() + i);
+            let dateStr = currentDate.toISOString().split('T')[0];
+            if (!holidays.includes(dateStr) && !vacations.includes(dateStr)) {
+                weeks++;  // Count only weekdays (Mon-Fri) excluding holidays and vacations
+            }
+        }
+    }
+
+    return weeks;
+}
+
+// Function to count lecture days based on timetable
+function countLectureDays(start, end, subjectDays, holidays, vacations) {
+    let count = 0;
+    let currentDate = new Date(start);
+
+    while (currentDate <= end) {
+        let day = currentDate.getDay();
+        if (subjectDays.includes(day)) {
+            let dateStr = currentDate.toISOString().split('T')[0];
+            if (!holidays.includes(dateStr) && !vacations.includes(dateStr)) {
+                count += subjectDays.filter(d => d === day).length;
+            }
+        }
+        currentDate.setDate(currentDate.getDate() + 1);
+    }
+    return count;
+}
+
+// Function to calculate attendance percentage
+function calculateAttendance() {
+    let startDate = new Date(document.getElementById('startDate').value);
+    let endDate = new Date(document.getElementById('endDate').value);
+
+    // If end date is not included
+    endDate.setDate(endDate.getDate() - 1);
+
+    let holidays = parseDateRanges('holidays');
+    let vacations = parseDateRanges('vacations');
+    let resultsDiv = document.getElementById('results');
+    resultsDiv.innerHTML = '';
+
+    let totalPresent = 0;
+    let totalScheduled = 0;
+
+    subjects.forEach(subject => {
+        let present = parseInt(document.getElementById(`present-${subject}`).value);
+        let subjectDays = timetable[subject];
+        let lectureDays = countLectureDays(startDate, endDate, subjectDays, holidays, vacations);
+        let totalDaysPerSubject = lectureDays;
+        totalScheduled += totalDaysPerSubject;
+        totalPresent += present;
+
+        let attendancePercentage = (present / totalDaysPerSubject) * 100;
+        resultsDiv.innerHTML += `<p>Attendance for ${subject}: ${attendancePercentage.toFixed(2)}%</p>`;
+    });
+
+    let overallPercentage = (totalPresent / totalScheduled) * 100;
+    resultsDiv.innerHTML += `<h3>Overall Attendance: ${overallPercentage.toFixed(2)}%</h3>`;
+}
+</script>
+
+<footer class="footer">
+    Created by <strong>Cheetoss</strong> | <a href="https://github.com/zappedxd" target="_blank">GitHub Profile</a>
+</footer>
+
+</body>
+</html>
