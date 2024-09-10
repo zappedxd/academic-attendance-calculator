@@ -129,8 +129,8 @@ function generateAttendanceFields() {
     inputDiv.innerHTML = '';
     subjects.forEach(subject => {
         inputDiv.innerHTML += `
-            <label for="present-${subject}">Days present for ${subject}:</label>
-            <input type="number" id="present-${subject}" required>
+            <label for="attended-${subject}">Lectures attended for ${subject}:</label>
+            <input type="number" id="attended-${subject}" required>
         `;
     });
 }
@@ -206,22 +206,22 @@ function calculateAttendance() {
     let resultsDiv = document.getElementById('results');
     resultsDiv.innerHTML = '';
 
-    let totalPresent = 0;
+    let totalAttended = 0;
     let totalScheduled = 0;
 
     subjects.forEach(subject => {
-        let present = parseInt(document.getElementById(`present-${subject}`).value);
+        let attended = parseInt(document.getElementById(`attended-${subject}`).value);
         let subjectDays = timetable[subject];
         let lectureDays = countLectureDays(startDate, endDate, subjectDays, holidays, vacations);
         let totalDaysPerSubject = lectureDays;
         totalScheduled += totalDaysPerSubject;
-        totalPresent += present;
+        totalAttended += attended;
 
-        let attendancePercentage = (present / totalDaysPerSubject) * 100;
+        let attendancePercentage = (attended / totalDaysPerSubject) * 100;
         resultsDiv.innerHTML += `<p>Attendance for ${subject}: ${attendancePercentage.toFixed(2)}%</p>`;
     });
 
-    let overallPercentage = (totalPresent / totalScheduled) * 100;
+    let overallPercentage = (totalAttended / totalScheduled) * 100;
     resultsDiv.innerHTML += `<h3>Overall Attendance: ${overallPercentage.toFixed(2)}%</h3>`;
 }
 </script>
