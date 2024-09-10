@@ -1,4 +1,3 @@
-Here's the updated README file for your Attendance Calculator, reflecting the changes to track the number of lectures attended and excluding singular holidays:
 
 
 # Attendance Calculator
