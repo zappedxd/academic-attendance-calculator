@@ -1,4 +1,4 @@
-```markdown
+
 # Attendance Calculator
 
 This web-based Attendance Calculator helps you track and calculate your attendance percentage for different subjects over a specified period.
