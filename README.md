@@ -16,9 +16,9 @@ It accounts for both holidays and vacation periods, excluding these dates from t
 
 1. Download or Clone the Repository
    ```bash
-   git clone https://github.com/yourusername/attendance-calculator.git
+   [git clone https://github.com/zappedxd/academic-attendance-calculator.git
    ```
-   or download the ZIP file from [GitHub Releases](https://github.com/yourusername/attendance-calculator/releases).
+   or download the ZIP file from [GitHub Releases](https://github.com/zappedxd/academic-attendance-calculator.git).
 
 2. Open the HTML File
    - Navigate to the folder where the HTML file is located.
